@@ -3,5 +3,5 @@ from gui import *
 if __name__ == "__main__":
     gui = gui_bs()
     # MAJOR.MINOR.PATCH
-    gui.build()
+    gui.home_ui()
     gui.root.mainloop()
