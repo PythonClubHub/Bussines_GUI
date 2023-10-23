@@ -8,33 +8,60 @@ class gui_bs():
         ###
         self.new_client = StringVar()
         self.new_date = StringVar()
+        self.new_number = StringVar()
+        self.new_duration = StringVar()
+        self.new_service = StringVar()
 
     def home_ui(self):
         self.main_frame = Frame(self.root)
         self.main_frame.grid(row=0, column=0)
 
-        self.new_app = Button(self.main_frame, text='New Appoinment', command=self.new_appo)
-        self.new_app.grid(row=0, column=1)
+        self.schedule_btn = Button(self.main_frame, text='Schedule', justify='center', width=7, height=2)
+        self.schedule_btn.grid(row=0, column=0, padx=(145,0), pady=110)
+
+        self.new_app = Button(self.main_frame, text='New \nAppoinment', command=self.new_appo)
+        self.new_app.grid(row=0, column=1, padx=20, pady=100)
 
     def appoinment_ui(self):
         self.main_frame = Frame(self.root)
         self.main_frame.grid(row=0, column=0)
 
+        self.frame_1 = Frame(self.root)
+        self.frame_1.grid(row=1, column=0)
+
         ###
-        self.new_user_label = Label(self.main_frame, text='New Entry')
-        self.new_user_label.grid(row=0, column=0)
+        self.new_user_label = Label(self.main_frame, text='User Name', justify='right')
+        self.new_user_label.grid(row=0, column=0, sticky='e')
 
         self.new_user_entry = Entry(self.main_frame, textvariable=self.new_client)
         self.new_user_entry.grid(row=0, column=1)
 
         self.new_date_label = Label(self.main_frame, text='Date')
-        self.new_date_label.grid(row=1, column=0)
+        self.new_date_label.grid(row=1, column=0, sticky='e')
 
         self.new_date_entry = Entry(self.main_frame, textvariable=self.new_date)
         self.new_date_entry.grid(row=1, column=1)
 
-        self.back_btn = Button(self.main_frame, text='Back', command=self.back_root)
-        self.back_btn.grid(row=2, column=0)
+        self.new_number_label = Label(self.main_frame, text='Phone Number', justify='right')
+        self.new_number_label.grid(row=2, column=0, sticky='e')
+
+        self.new_number_entry = Entry(self.main_frame, textvariable=self.new_number)
+        self.new_number_entry.grid(row=2, column=1)
+
+        self.new_duration_label = Label(self.main_frame, text='Duration (h)', justify='right')
+        self.new_duration_label.grid(row=3, column=0, sticky='e')
+
+        self.new_duration_entry = Entry(self.main_frame, textvariable=self.new_duration)
+        self.new_duration_entry.grid(row=3, column=1)
+
+        self.new_sevice_label = Label(self.main_frame, text='Service', justify='right')
+        self.new_sevice_label.grid(row=0, column=0, sticky='e')
+
+        self.new_service_entry = Entry(self.main_frame, textvariable=self.new_service)
+        self.new_service_entry.grid(row=0, column=1)
+
+        self.back_btn = Button(self.frame_1, text='Back', command=self.back_root)
+        self.back_btn.grid(row=0, column=0, pady=50)
 
     def new_appo(self):
         self.destroy_widg(self.root)
