@@ -85,7 +85,10 @@ class gui_bs():
         ...
 
     def check_boxes(self):
-        ...
+        if self.new_client.get() != '' and self.new_client.get().isnumeric() != True:
+            print("It's ok")
+        else:
+            print('Error')
 
     def destroy_widg(self, window):
         _list = window.winfo_children()
