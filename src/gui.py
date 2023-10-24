@@ -76,6 +76,7 @@ class gui_bs():
         #self.loading_thread.start()
         #time.sleep(1)
         self.show_loading_screen()
+        self.check_boxes()
         self.root.after(2000, lambda: self.destroy_widg(self.root))
         self.root.after(2000, lambda: self.home_ui())
 
@@ -83,6 +84,8 @@ class gui_bs():
         self.show_loading_screen()
         ...
 
+    def check_boxes(self):
+        ...
 
     def destroy_widg(self, window):
         _list = window.winfo_children()
