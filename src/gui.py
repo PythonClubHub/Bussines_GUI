@@ -4,7 +4,9 @@ class gui_bs():
     def __init__(self):
         self.root = Tk()
         self.root.geometry("500x300")
+        conn = sqlite3.connect('user.db')
 
+        c = conn.cursor()
         ###
         self.new_client = StringVar()
         self.new_date = StringVar()
