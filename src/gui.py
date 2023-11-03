@@ -4,9 +4,9 @@ class gui_bs():
     def __init__(self):
         self.root = Tk()
         self.root.geometry("500x300")
-        conn = sqlite3.connect('user.db')
+        self.conn = sqlite3.connect('user.db')
 
-        c = conn.cursor()
+        self.c = self.conn.cursor()
         ###
         self.new_client = StringVar()
         self.new_date = StringVar()
@@ -77,8 +77,17 @@ class gui_bs():
         #self.loading_thread = threading.Thread(target=self.thread1, daemon=True)
         #self.loading_thread.start()
         #time.sleep(1)
+
         self.show_loading_screen()
         self.check_boxes()
+        self.c.execute("INSERT INTO user_app (name, date, number) VALUES(?, ?, ?)", (self.new_client.get(), self.new_date.get(), self.new_number.get()))
+        self.conn.commit()
+        print('----', self.new_client.get())
+        self.c.execute("SELECT * FROM user_app")
+        self.conn.commit()
+        print(self.c.fetchall())
+        self.conn.close()
+
         self.root.after(2000, lambda: self.destroy_widg(self.root))
         self.root.after(2000, lambda: self.home_ui())
 
