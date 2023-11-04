@@ -82,10 +82,9 @@ class gui_bs():
         self.check_boxes()
         self.c.execute("INSERT INTO user_app (name, date, number) VALUES(?, ?, ?)", (self.new_client.get(), self.new_date.get(), self.new_number.get()))
         self.conn.commit()
-        print('----', self.new_client.get())
+
         self.c.execute("SELECT * FROM user_app")
         self.conn.commit()
-        print(self.c.fetchall())
         self.conn.close()
 
         self.root.after(2000, lambda: self.destroy_widg(self.root))
