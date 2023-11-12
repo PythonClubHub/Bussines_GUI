@@ -3,6 +3,9 @@ import tkinter as tk
 from tkinter import Entry, StringVar, Button, Label, Frame, Toplevel
 from PIL import Image, ImageTk
 from tkcalendar import *
+from tkinter import ttk
+import time
+import pandas as pd
 
 class GuiBs:
     def __init__(self):
@@ -36,7 +39,7 @@ class GuiBs:
         self.main_frame = Frame(self.root)
         self.main_frame.grid(row=0, column=0)
 
-        self.schedule_btn = Button(self.main_frame, text='Schedule', justify='center', width=7, height=2)
+        self.schedule_btn = Button(self.main_frame, text='Schedule', justify='center', width=7, height=2, command=self.schedule)
         self.schedule_btn.grid(row=0, column=0, padx=(145,0), pady=110)
 
         self.new_app = Button(self.main_frame, text='New \nAppoinment', command=self.new_appo)
@@ -100,6 +103,25 @@ class GuiBs:
         cal.grid()
         # to grab date.. cal.get_date()
 
+    def schedule_form(self):
+        table = ttk.Treeview(self.root, columns=('name','date','number'), show='headings')
+        table.heading('name', text='Name')
+        table.heading('date', text='Date')
+        table.heading('number', text='Telephone Number')
+        table.grid()
+
+        with sqlite3.connect("user.db") as db:
+            print('Inside')
+            data_pd = pd.read_sql('SELECT * FROM user_app', db)
+            #data_pd = list(data_pd)
+            data_listed = data_pd.values.tolist()
+        for i in range(len(data_listed)):
+            table.insert(parent='', index=i, values=data_listed[i])
+
+    def schedule(self):
+        self.destroy_widg(self.root)
+        self.schedule_form()
+
     def new_appo(self):
         self.destroy_widg(self.root)
         self.appoinment_ui()
@@ -128,6 +150,7 @@ class GuiBs:
 
         self.c.execute("SELECT * FROM user_app")
         self.conn.commit()
+        time.sleep(2)
 
         self.root.after(2000, lambda: self.destroy_widg(self.root))
         self.root.after(2000, lambda: self.home_ui())
