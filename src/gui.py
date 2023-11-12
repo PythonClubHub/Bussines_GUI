@@ -104,11 +104,12 @@ class GuiBs:
         # to grab date.. cal.get_date()
 
     def schedule_form(self):
-        table = ttk.Treeview(self.root, columns=('name','date','number'), show='headings')
-        table.heading('name', text='Name')
-        table.heading('date', text='Date')
-        table.heading('number', text='Telephone Number')
-        table.grid()
+        self.sh_table = ttk.Treeview(self.root, columns=('name','date','number'), show='headings')
+        self.sh_table.bind('<Delete>', self.delete_item)
+        self.sh_table.heading('name', text='Name')
+        self.sh_table.heading('date', text='Date')
+        self.sh_table.heading('number', text='Telephone Number')
+        self.sh_table.grid()
 
         with sqlite3.connect("user.db") as db:
             print('Inside')
@@ -116,7 +117,11 @@ class GuiBs:
             #data_pd = list(data_pd)
             data_listed = data_pd.values.tolist()
         for i in range(len(data_listed)):
-            table.insert(parent='', index=i, values=data_listed[i])
+            self.sh_table.insert(parent='', index=i, values=data_listed[i])
+
+    def delete_item(self):
+        for i in self.sh_table.selection():
+            self.sh_table.delete()
 
     def schedule(self):
         self.destroy_widg(self.root)
@@ -147,10 +152,11 @@ class GuiBs:
         self.new_date.set("")
         self.new_client.set("")
         self.new_number.set("")
+        self.new_duration.set("")
+        self.new_service.set("")
 
         self.c.execute("SELECT * FROM user_app")
         self.conn.commit()
-        time.sleep(2)
 
         self.root.after(2000, lambda: self.destroy_widg(self.root))
         self.root.after(2000, lambda: self.home_ui())
