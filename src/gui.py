@@ -1,19 +1,37 @@
-from lib import *
+import sqlite3
+import tkinter as tk
+from tkinter import Entry, StringVar, Button, Label, Frame, Toplevel
+from PIL import Image, ImageTk
+from tkcalendar import *
 
-class gui_bs():
+class GuiBs:
     def __init__(self):
-        self.root = Tk()
+        self.root = tk.Tk()
         self.root.geometry("500x300")
         self.conn = sqlite3.connect('user.db')
-
         self.c = self.conn.cursor()
-        ###
+
+        self.c.execute('''
+            CREATE TABLE IF NOT EXISTS user_app (
+                name TEXT,
+                date TEXT,
+                number TEXT
+            )
+        ''')
+
         self.new_client = StringVar()
         self.new_date = StringVar()
         self.new_number = StringVar()
         self.new_duration = StringVar()
         self.new_service = StringVar()
-        
+
+        image_path = "/Users/timoothee/Desktop/Repos/Bussines_GUI/images/calendar.png"
+        image = Image.open(image_path).resize((25, 25), Image.ANTIALIAS)
+        self.photo = ImageTk.PhotoImage(image)
+
+    def close_db(self):
+        self.conn.close()
+
     def home_ui(self):
         self.main_frame = Frame(self.root)
         self.main_frame.grid(row=0, column=0)
@@ -28,7 +46,6 @@ class gui_bs():
         self.main_frame = Frame(self.root)
         self.main_frame.grid(row=0, column=0)
 
-        ###
         self.new_user_label = Label(self.main_frame, text='User Name', justify='right')
         self.new_user_label.grid(row=0, column=0, sticky='e')
 
@@ -40,6 +57,9 @@ class gui_bs():
 
         self.new_date_entry = Entry(self.main_frame, textvariable=self.new_date)
         self.new_date_entry.grid(row=1, column=1)
+
+        self.calendar_button = tk.Button(self.main_frame, image=self.photo, width=25, height=25, command=self.toplevel_wd)
+        self.calendar_button.grid(row=1, column=2)
 
         self.new_number_label = Label(self.main_frame, text='Phone Number', justify='right')
         self.new_number_label.grid(row=2, column=0, sticky='e')
@@ -65,6 +85,21 @@ class gui_bs():
         self.confirmation_btn = Button(self.main_frame, text='Confirm', command=self.client_confirm)
         self.confirmation_btn.grid(row=5, column=1, pady=70, sticky='w')
 
+    def toplevel_wd(self):
+        button_x = self.calendar_button.winfo_rootx()
+        button_y = self.calendar_button.winfo_rooty()
+
+        top_level = tk.Toplevel(self.root)
+        top_level.geometry("230x160")
+
+        new_x = button_x + 50
+        new_y = button_y + 50  
+
+        top_level.geometry(f"+{new_x}+{new_y}")
+        cal = Calendar(top_level, selectmode="day", year=2023, month = 11, day=12)
+        cal.grid()
+        # to grab date.. cal.get_date()
+
     def new_appo(self):
         self.destroy_widg(self.root)
         self.appoinment_ui()
@@ -74,28 +109,31 @@ class gui_bs():
         self.home_ui()
 
     def client_confirm(self):
-        #self.loading_thread = threading.Thread(target=self.thread1, daemon=True)
-        #self.loading_thread.start()
-        #time.sleep(1)
-
+        client_name = self.new_client.get()
+        data = self.new_date.get()
+        number = self.new_number.get()
+        
         self.show_loading_screen()
         self.check_boxes()
-        self.c.execute("INSERT INTO user_app (name, date, number) VALUES(?, ?, ?)", (self.new_client.get(), self.new_date.get(), self.new_number.get()))
-        self.conn.commit()
+
+        try:
+            self.c.execute("INSERT INTO user_app (name, date, number) VALUES(?, ?, ?)", (client_name, data, number,))
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error inserting data: {e}")
+
+        self.new_date.set("")
+        self.new_client.set("")
+        self.new_number.set("")
 
         self.c.execute("SELECT * FROM user_app")
         self.conn.commit()
-        self.conn.close()
 
         self.root.after(2000, lambda: self.destroy_widg(self.root))
         self.root.after(2000, lambda: self.home_ui())
 
-    def thread1(self):
-        self.show_loading_screen()
-        ...
-
     def check_boxes(self):
-        if self.new_client.get() != '' and self.new_client.get().isnumeric() != True:
+        if self.new_client.get():
             print("It's ok")
         else:
             print('Error')
