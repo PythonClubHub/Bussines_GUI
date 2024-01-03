@@ -63,6 +63,9 @@ class GuiBs:
         self.new_app = Button(self.main_frame, text='New \nOrder', command=self.new_appo)
         self.new_app.grid(row=0, column=1, padx=20, pady=100)
 
+        self.conf_item = Button(self.main_frame, text='conf', command=self.conf_ui)
+        self.conf_item.grid(row=0, column=2)
+
     def appoinment_ui(self):
         self.main_frame = Frame(self.root)
         self.main_frame.grid(row=0, column=0)
