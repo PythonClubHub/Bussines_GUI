@@ -63,8 +63,21 @@ class GuiBs:
         self.new_app = Button(self.main_frame, text='New \nOrder', command=self.new_appo)
         self.new_app.grid(row=0, column=1, padx=20, pady=100)
 
-        self.conf_item = Button(self.main_frame, text='conf', command=self.conf_ui)
+        self.conf_item = Button(self.main_frame, text='conf', command=self.new_conf)
         self.conf_item.grid(row=0, column=2)
+
+    def conf_ui(self):
+        self.main_frame = Frame(self.root)
+        self.main_frame.grid(row=0, column=0)
+
+        #self.item_name  = Entry(self.main_frame, textvariable=)
+
+    def conf_ui(self):
+        self.main_frame = Frame(self.root)
+        self.main_frame.grid(row=0, column=0)
+        
+        self.back_btn = Button(self.main_frame, text='Back', command=self.back_root)
+        self.back_btn.grid(row=5, column=0, pady=70)
 
     def appoinment_ui(self):
         self.main_frame = Frame(self.root)
@@ -97,7 +110,6 @@ class GuiBs:
         self.sub_btn = Button(self.main_frame, text='-', command=self.substract)
         self.sub_btn.grid(row=2, column=3, sticky='w')
         
-
         self.back_btn = Button(self.main_frame, text='Back', command=self.back_root)
         self.back_btn.grid(row=5, column=0, pady=70)
 
@@ -183,6 +195,10 @@ class GuiBs:
     def new_appo(self):
         self.destroy_widg(self.root)
         self.appoinment_ui()
+
+    def new_conf(self):
+        self.destroy_widg(self.root)
+        self.conf_ui()
 
     def back_root(self):
         self.destroy_widg(self.root)
