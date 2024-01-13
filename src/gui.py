@@ -34,12 +34,13 @@ class GuiBs:
         image = Image.open(image_path).resize((25, 25), Image.ANTIALIAS)
         self.photo = ImageTk.PhotoImage(image)
         self.choice_var = StringVar()
-        self.choice_list = ("apple", "orange")
+        self.choice_list = ('apple', "orange")
         self.choice_var.set("Select")
         self.user_quant_var = IntVar()
         self.user_quant_var.set("0")
         self.client_no = IntVar()
         self.client_no.set(0)
+        self.item_list = []
         if db_ex:
             try:
                 last_row = self.c.execute('select * from user_app').fetchall()[-1]
@@ -63,21 +64,35 @@ class GuiBs:
         self.new_app = Button(self.main_frame, text='New \nOrder', command=self.new_appo)
         self.new_app.grid(row=0, column=1, padx=20, pady=100)
 
-        self.conf_item = Button(self.main_frame, text='conf', command=self.new_conf)
+        self.conf_item = Button(self.main_frame, text='Conf', command=self.new_conf)
         self.conf_item.grid(row=0, column=2)
 
     def conf_ui(self):
         self.main_frame = Frame(self.root)
         self.main_frame.grid(row=0, column=0)
 
-        #self.item_name  = Entry(self.main_frame, textvariable=)
+        self.item_name = Label(self.main_frame, text="Item")
+        self.item_name.grid(row=0, column=0, pady=(20,0))
 
-    def conf_ui(self):
-        self.main_frame = Frame(self.root)
-        self.main_frame.grid(row=0, column=0)
+        self.item_entry = Entry(self.main_frame)
+        self.item_entry.grid(row=0, column=1, pady=(20,0), padx=(0,5))
+
+        self.item_quant = Label(self.main_frame, text="Quant")
+        self.item_quant.grid(row=1, column=0)
+
+        self.quant_entry = Entry(self.main_frame, width=10)
+        self.quant_entry.grid(row=1, column=1, padx=(0,5), sticky='w')
+
+        self.add_new = Button(self.main_frame, text="Add",command=self.set_name)
+        self.add_new.grid(row=2, column=0)
         
         self.back_btn = Button(self.main_frame, text='Back', command=self.back_root)
-        self.back_btn.grid(row=5, column=0, pady=70)
+        self.back_btn.grid(row=2, column=1, pady=10, sticky='w')
+
+    def set_name(self):
+        item = self.item_entry.get()
+        self.item_list.append(item)
+        self.choice_list = tuple(self.item_list)
 
     def appoinment_ui(self):
         self.main_frame = Frame(self.root)
