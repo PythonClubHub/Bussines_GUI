@@ -75,13 +75,13 @@ class GuiBs:
         self.item_name.grid(row=0, column=0, pady=20)
 
         self.item_entry = Entry(self.main_frame)
-        self.item_entry.grid(row=0, column=1, pady=20, padx=50)
+        self.item_entry.grid(row=0, column=1, pady=20, padx=(0,5))
 
-        self.add_new = Button(self.main_frame, command=self.set_name)
+        self.add_new = Button(self.main_frame, text="Add",command=self.set_name)
         self.add_new.grid(row=1, column=0)
         
         self.back_btn = Button(self.main_frame, text='Back', command=self.back_root)
-        self.back_btn.grid(row=2, column=0, pady=30)
+        self.back_btn.grid(row=1, column=1, pady=10, sticky='w')
 
     def set_name(self):
         item = self.item_entry.get()
