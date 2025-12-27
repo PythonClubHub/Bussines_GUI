@@ -1,282 +1,378 @@
-import sqlite3
-import tkinter as tk
-from tkinter import Entry, IntVar, Listbox, OptionMenu, StringVar, Button, Label, Frame, Toplevel
-from PIL import Image, ImageTk
-from tkcalendar import *
-from tkinter import ttk
-import time
-import pandas as pd
 import os
+import sqlite3
+import subprocess
+import platform
+from datetime import datetime
+from PyQt5.QtWidgets import (
+    QWidget, QVBoxLayout, QLabel, QPushButton,
+    QLineEdit, QFormLayout, QTextEdit, QFileDialog,
+    QDateEdit, QTimeEdit, QComboBox, QTableWidget, QTableWidgetItem,
+    QDialog, QMessageBox, QHBoxLayout
+)
+from PyQt5.QtCore import QDate, QTime
+from PyQt5.QtGui import QColor, QBrush
 
-class GuiBs:
-    def __init__(self):
-        self.root = tk.Tk()
-        self.root.geometry("500x300")
-        self.conn = sqlite3.connect('user.db')
-        self.c = self.conn.cursor()
-        db_ex = os.path.isfile('./user.db')
+DB_FILE = "dental_appointments.db"
 
-        self.c.execute('''
-            CREATE TABLE IF NOT EXISTS user_app (
+# ---------------- Helper Functions ----------------
+
+def create_database():
+    if not os.path.exists(DB_FILE):
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE appointments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT,
+                surname TEXT,
                 date TEXT,
-                number TEXT
+                time TEXT,
+                phone TEXT,
+                details TEXT,
+                status TEXT,
+                attachments TEXT
             )
-        ''')
+        """)
+        conn.commit()
+        conn.close()
 
-        self.new_client = StringVar()
-        self.new_date = StringVar()
-        self.new_number = StringVar()
-        self.new_duration = StringVar()
-        self.new_service = StringVar()
+def save_to_db(data, update_id=None):
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    attachments_str = ",".join(data["Attachments"]) if data["Attachments"] else ""
+    if update_id:
+        cursor.execute("""
+            UPDATE appointments
+            SET name=?, surname=?, date=?, time=?, phone=?, details=?, status=?, attachments=?
+            WHERE id=?
+        """, (
+            data["Name"], data["Surname"], data["Date"], data["Time"],
+            data["Phone"], data["Details"], data["Status"], attachments_str, update_id
+        ))
+    else:
+        cursor.execute("""
+            INSERT INTO appointments (
+                name, surname, date, time, phone, details, status, attachments
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            data["Name"], data["Surname"], data["Date"], data["Time"],
+            data["Phone"], data["Details"], data["Status"], attachments_str
+        ))
+    conn.commit()
+    conn.close()
 
-        image_path = "/Users/timoothee/Desktop/Repos/Bussines_GUI/images/calendar.png"
-        image = Image.open(image_path).resize((25, 25), Image.ANTIALIAS)
-        self.photo = ImageTk.PhotoImage(image)
-        self.choice_var = StringVar()
-        self.choice_list = ('apple', "orange")
-        self.choice_var.set("Select")
-        self.user_quant_var = IntVar()
-        self.user_quant_var.set("0")
-        self.client_no = IntVar()
-        self.client_no.set(0)
-        self.item_list = []
-        if db_ex:
-            try:
-                last_row = self.c.execute('select * from user_app').fetchall()[-1]
-                self.client_no.set(int(list(last_row)[0])+1)
-            except:
-                ...
-        #print("typo", type(last_row), print(last_row))
-        self.ct = 0
-        self.client_ct = 0
+def fetch_all_appointments():
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT id, name, surname, date, time, details, status, attachments
+        FROM appointments
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
 
-    def close_db(self):
-        self.conn.close()
+def fetch_appointment_by_id(app_id):
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM appointments WHERE id=?", (app_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row
 
-    def home_ui(self):
-        self.main_frame = Frame(self.root)
-        self.main_frame.grid(row=0, column=0)
+def open_file(path):
+    if platform.system() == "Darwin":
+        subprocess.call(("open", path))
+    elif platform.system() == "Windows":
+        os.startfile(path)
+    else:
+        subprocess.call(("xdg-open", path))
 
-        self.schedule_btn = Button(self.main_frame, text='Schedule', justify='center', width=7, height=2, command=self.schedule)
-        self.schedule_btn.grid(row=0, column=0, padx=(145,0), pady=110)
+# ---------------- Patient Details Window ----------------
 
-        self.new_app = Button(self.main_frame, text='New \nOrder', command=self.new_appo)
-        self.new_app.grid(row=0, column=1, padx=20, pady=100)
+class PatientDetailsWindow(QDialog):
+    def __init__(self, appointment_id):
+        super().__init__()
+        self.setWindowTitle("Patient Details")
+        self.setGeometry(200, 200, 400, 500)
+        layout = QFormLayout()
+        self.setLayout(layout)
 
-        self.conf_item = Button(self.main_frame, text='Conf', command=self.new_conf)
-        self.conf_item.grid(row=0, column=2)
+        row = fetch_appointment_by_id(appointment_id)
+        if not row:
+            layout.addRow(QLabel("Appointment not found"))
+            return
 
-    def conf_ui(self):
-        self.main_frame = Frame(self.root)
-        self.main_frame.grid(row=0, column=0)
+        labels = ["ID", "Name", "Surname", "Date", "Time", "Phone",
+                  "Details", "Status", "Attachments"]
 
-        self.item_name = Label(self.main_frame, text="Item")
-        self.item_name.grid(row=0, column=0, pady=(20,0))
+        for idx, label_text in enumerate(labels):
+            value = row[idx]
+            if label_text == "Attachments" and value:
+                files = value.split(",")
+                for f in files:
+                    if f:
+                        btn = QPushButton(os.path.basename(f))
+                        btn.clicked.connect(lambda _, path=f: open_file(path))
+                        layout.addRow("Attachment:", btn)
+                continue
+            elif value is None:
+                value = ""
+            display = QTextEdit(value) if label_text == "Details" else QLineEdit(str(value))
+            display.setReadOnly(True)
+            if label_text == "Details":
+                display.setFixedHeight(80)
+            layout.addRow(f"{label_text}:", display)
 
-        self.item_entry = Entry(self.main_frame)
-        self.item_entry.grid(row=0, column=1, pady=(20,0), padx=(0,5))
+        close_button = QPushButton("Close")
+        close_button.clicked.connect(self.close)
+        layout.addRow(close_button)
 
-        self.item_quant = Label(self.main_frame, text="Quant")
-        self.item_quant.grid(row=1, column=0)
+# ---------------- GUI Main Class ----------------
 
-        self.quant_entry = Entry(self.main_frame, width=10)
-        self.quant_entry.grid(row=1, column=1, padx=(0,5), sticky='w')
+class HomeDent(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("HomeDent")
+        self.setGeometry(100, 100, 750, 500)
+        create_database()
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+        self.current_edit_id = None
+        self.attached_files = []
+        self.show_home_view()
 
-        self.add_new = Button(self.main_frame, text="Add",command=self.set_name)
-        self.add_new.grid(row=2, column=0)
-        
-        self.back_btn = Button(self.main_frame, text='Back', command=self.back_root)
-        self.back_btn.grid(row=2, column=1, pady=10, sticky='w')
+    def clear_layout(self, layout=None):
+        if layout is None:
+            layout = self.layout
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+            elif child.layout():
+                self.clear_layout(child.layout())
 
-    def set_name(self):
-        item = self.item_entry.get()
-        self.item_list.append(item)
-        self.choice_list = tuple(self.item_list)
+    # ---------------- Home View ----------------
+    def show_home_view(self):
+        self.clear_layout()
+        clinic_label = QLabel("HOMEDENT")
+        clinic_label.setStyleSheet("font-size: 20px; font-weight: bold;")
+        self.layout.addWidget(clinic_label)
 
-    def appoinment_ui(self):
-        self.main_frame = Frame(self.root)
-        self.main_frame.grid(row=0, column=0)
-        self.user_quant_var.set("0")
-        self.choice_var.set("Select")
-        self.ct = 0
+        appointment_button = QPushButton("Appointment")
+        appointment_button.clicked.connect(self.show_appointment_view)
+        self.layout.addWidget(appointment_button)
 
-        self.new_user_label = Label(self.main_frame, text='User No.', justify='right')
-        self.new_user_label.grid(row=0, column=0, sticky='e')
+        db_button = QPushButton("Database")
+        db_button.clicked.connect(self.show_database_view)
+        self.layout.addWidget(db_button)
 
-        self.new_user_entry = Label(self.main_frame, text=self.client_no.get())
-        self.new_user_entry.grid(row=0, column=1)
+    # ---------------- Appointment View ----------------
+    def show_appointment_view(self, edit_id=None):
+        self.clear_layout()
+        self.current_edit_id = edit_id
+        self.attached_files = []
+        form_layout = QFormLayout()
 
-        self.user_choice_label = Label(self.main_frame, text='Type', justify='right')
-        self.user_choice_label.grid(row=1, column=0, sticky='e')
+        self.name_entry = QLineEdit()
+        form_layout.addRow("Name:", self.name_entry)
 
-        self.user_choice_list = OptionMenu(self.main_frame, self.choice_var, *self.choice_list)
-        self.user_choice_list.config(width=5)
-        self.user_choice_list.grid(row=1, column=1)
+        self.surname_entry = QLineEdit()
+        form_layout.addRow("Surname:", self.surname_entry)
 
-        self.user_quant_label = Label(self.main_frame, text="Quantity")
-        self.user_quant_label.grid(row=2, column=0, sticky='e')
-        
-        self.user_quant = Label(self.main_frame, text = self.user_quant_var.get())
-        self.user_quant.grid(row=2, column=1)
-        
-        self.add_btn = Button(self.main_frame, text='+', command=self.add)
-        self.add_btn.grid(row=2, column=2, sticky='w')
-        self.sub_btn = Button(self.main_frame, text='-', command=self.substract)
-        self.sub_btn.grid(row=2, column=3, sticky='w')
-        
-        self.back_btn = Button(self.main_frame, text='Back', command=self.back_root)
-        self.back_btn.grid(row=5, column=0, pady=70)
+        self.date_entry = QDateEdit()
+        self.date_entry.setCalendarPopup(True)
+        self.date_entry.setDate(QDate.currentDate())
+        form_layout.addRow("Date:", self.date_entry)
 
-        self.confirmation_btn = Button(self.main_frame, text='Confirm', command=self.client_confirm)
-        self.confirmation_btn.grid(row=5, column=1, pady=70, sticky='w')
+        self.time_entry = QTimeEdit()
+        self.time_entry.setTime(QTime.currentTime())
+        form_layout.addRow("Time:", self.time_entry)
 
-    def add(self):
-        self.ct = self.ct + 1
-        self.user_quant_var.set(self.ct)
-        self.user_quant.configure(text=self.user_quant_var.get())
+        self.phone_entry = QLineEdit()
+        form_layout.addRow("Phone Number:", self.phone_entry)
 
-    def substract(self):
-        if self.ct != 0:
-            self.ct = self.ct - 1
-            self.user_quant_var.set(self.ct)
-            self.user_quant.configure(text=self.user_quant_var.get())
-        else:
-            ...
+        self.details_entry = QTextEdit()
+        form_layout.addRow("Appointment Details:", self.details_entry)
 
-    def toplevel_wd(self):
-        button_x = self.calendar_button.winfo_rootx()
-        button_y = self.calendar_button.winfo_rooty()
+        self.status_entry = QComboBox()
+        self.status_entry.addItems(["Scheduled", "Completed", "Cancelled"])
+        form_layout.addRow("Status:", self.status_entry)
 
-        top_level = tk.Toplevel(self.root)
-        top_level.geometry("230x160")
+        self.attach_layout = QVBoxLayout()
+        self.attach_button = QPushButton("Attach Files / Photos")
+        self.attach_button.clicked.connect(self.attach_files)
+        self.attach_layout.addWidget(self.attach_button)
+        form_layout.addRow("Attachments:", self.attach_layout)
 
-        new_x = button_x + 50
-        new_y = button_y + 50  
+        self.layout.addLayout(form_layout)
 
-        top_level.geometry(f"+{new_x}+{new_y}")
-        cal = Calendar(top_level, selectmode="day", year=2023, month = 11, day=12)
-        cal.grid()
-        # to grab date.. cal.get_date()
+        save_button = QPushButton("Save Appointment")
+        save_button.clicked.connect(self.save_appointment)
+        self.layout.addWidget(save_button)
 
-    def schedule_form(self):
-        self.main_frame = Frame(self.root)
-        self.main_frame.grid(row=0, column=0)
+        back_button = QPushButton("Back to Home")
+        back_button.clicked.connect(self.show_home_view)
+        self.layout.addWidget(back_button)
 
-        self.sec_frame = Frame(self.root)
-        self.sec_frame.grid(row=1, column=0, sticky='w')
-        self.sh_table = ttk.Treeview(self.main_frame, columns=('No.','choice','quant'), show='headings')
-        self.sh_table.bind('<Delete>', self.delete_item)
-        self.sh_table.heading('No.', text='No.')
-        self.sh_table.heading('choice', text='choice')
-        self.sh_table.heading('quant', text='quant')
-        self.sh_table.grid(row=0,column=0)
+        # Cargar datos si edit
+        if edit_id:
+            row = fetch_appointment_by_id(edit_id)
+            if row:
+                self.name_entry.setText(row[1])
+                self.surname_entry.setText(row[2])
+                self.date_entry.setDate(QDate.fromString(row[3], "yyyy-MM-dd"))
+                self.time_entry.setTime(QTime.fromString(row[4], "HH:mm"))
+                self.phone_entry.setText(row[5])
+                self.details_entry.setText(row[6])   # detalles correctos
+                self.status_entry.setCurrentText(row[7])  # status correcto
+                if row[8]:
+                    self.attached_files = row[8].split(",")  # attachments correctos
+                self.show_attached_files()
 
-        with sqlite3.connect("user.db") as db:
-            print('Inside')
-            data_pd = pd.read_sql('SELECT * FROM user_app', db)
-            #data_pd = list(data_pd)
-            data_listed = data_pd.values.tolist()
-            print("Here", data_listed)
-        for i in range(len(data_listed)):
-            self.sh_table.insert(parent='', index=i, values=data_listed[i])
+    def show_attached_files(self):
+        while self.attach_layout.count() > 1:
+            item = self.attach_layout.takeAt(1)
+            if item.widget():
+                item.widget().deleteLater()
+            elif item.layout():
+                self.clear_layout(item.layout())
+        for f in self.attached_files:
+            h_layout = QHBoxLayout()
+            lbl = QLabel(os.path.basename(f))
+            btn = QPushButton("Open")
+            btn.setMaximumWidth(60)
+            btn.clicked.connect(lambda _, path=f: open_file(path))
+            remove_btn = QPushButton("Remove")
+            remove_btn.setMaximumWidth(60)
+            remove_btn.clicked.connect(lambda _, path=f: self.remove_attachment(path))
+            h_layout.addWidget(lbl)
+            h_layout.addWidget(btn)
+            h_layout.addWidget(remove_btn)
+            self.attach_layout.addLayout(h_layout)
 
-        self.back_btn = Button(self.sec_frame, text='Back', command=self.back_root)
-        self.back_btn.grid(row=1, column=0, pady=20, sticky='w')
+    def remove_attachment(self, path):
+        if path in self.attached_files:
+            self.attached_files.remove(path)
+            self.show_attached_files()
 
-        self.reset_table_btn = Button(self.sec_frame, text='Reset', command=self.reset)
-        self.reset_table_btn.grid(row=1, column=1, pady=20, sticky='w')
+    # ---------------- Database View ----------------
+    def show_database_view(self):
+        self.clear_layout()
+        all_appointments = fetch_all_appointments()
 
-    def reset(self):
-        print("Before")
-        delete_query = 'DELETE FROM user_app;'
-        self.c.execute(delete_query)
-        self.conn.commit()
-        print("After")
-        self.show_loading_screen()
-        self.root.after(2000, lambda: self.destroy_widg(self.root))
-        self.root.after(2000, lambda: self.home_ui())
-        self.client_no.set(0)
+        # Orden descendente: más lejana al futuro primero
+        self.appointments = sorted(
+            all_appointments,
+            key=lambda r: datetime.strptime(f"{r[3]} {r[4]}", "%Y-%m-%d %H:%M"),
+            reverse=True
+        )
 
+        self.table = QTableWidget()
+        self.table.setColumnCount(5)  # nueva columna Has Attachment
+        self.table.setHorizontalHeaderLabels(["Patient Name", "Date", "Time", "Cause", "Attachment?"])
+        self.table.setRowCount(len(self.appointments))
 
-    def delete_item(self):
-        for i in self.sh_table.selection():
-            self.sh_table.delete()
+        now = datetime.now()
+        focus_index = None
+        min_delta = None
 
-    def schedule(self):
-        self.destroy_widg(self.root)
-        self.schedule_form()
+        for row_idx, row in enumerate(self.appointments):
+            app_id, name, surname, date_str, time_str, details, status, attachments = row
+            dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
 
-    def new_appo(self):
-        self.destroy_widg(self.root)
-        self.appoinment_ui()
+            self.table.setItem(row_idx, 0, QTableWidgetItem(f"{name} {surname}"))
+            self.table.setItem(row_idx, 1, QTableWidgetItem(date_str))
+            self.table.setItem(row_idx, 2, QTableWidgetItem(time_str))
+            self.table.setItem(row_idx, 3, QTableWidgetItem(details))
+            self.table.setItem(row_idx, 4, QTableWidgetItem("Yes" if attachments else "No"))
 
-    def new_conf(self):
-        self.destroy_widg(self.root)
-        self.conf_ui()
+            # Grey out past/completed
+            if dt < now or status == "Completed":
+                for col in range(5):
+                    self.table.item(row_idx, col).setForeground(QBrush(QColor("gray")))
+            else:
+                delta = (dt - now).total_seconds()
+                if min_delta is None or delta < min_delta:
+                    min_delta = delta
+                    focus_index = row_idx
 
-    def back_root(self):
-        self.destroy_widg(self.root)
-        self.home_ui()
+        self.table.resizeColumnsToContents()
+        self.layout.addWidget(self.table)
 
-    def client_confirm(self):
-        client_number = self.client_no.get()
-        choice = self.choice_var.get()
-        quant = self.user_quant_var.get()
-        
-        self.show_loading_screen()
-        self.check_boxes()
+        if focus_index is not None:
+            for col in range(5):
+                self.table.item(focus_index, col).setBackground(QBrush(QColor(144, 238, 144)))
 
-        try:
-            self.c.execute("INSERT INTO user_app (name, date, number) VALUES(?, ?, ?)", (client_number, choice, quant,))
-            self.conn.commit()
-            
-        except sqlite3.Error as e:
-            print(f"Error inserting data: {e}")
+        self.table.cellDoubleClicked.connect(self.open_patient_details)
 
-        #self.choice_var.set("")
-        #self.user_quant_var.set("")
-        self.client_ct = self.client_ct + 1
-        self.client_no.set(self.client_ct)
+        delete_button = QPushButton("Delete Appointment")
+        delete_button.clicked.connect(self.delete_selected_appointment)
+        self.layout.addWidget(delete_button)
 
-        self.c.execute("SELECT * FROM user_app")
-        self.conn.commit()
+        edit_button = QPushButton("Edit Appointment")
+        edit_button.clicked.connect(self.edit_selected_appointment)
+        self.layout.addWidget(edit_button)
 
-        #self.root.after(2000, lambda: self.destroy_widg(self.root))
-        self.root.after(1000, lambda: self.new_appo())
+        back_button = QPushButton("Back to Home")
+        back_button.clicked.connect(self.show_home_view)
+        self.layout.addWidget(back_button)
 
-    def check_boxes(self):
-        if self.new_client.get():
-            print("It's ok")
-        else:
-            print('Error')
+    def open_patient_details(self, row, column):
+        app_id = self.appointments[row][0]
+        details_window = PatientDetailsWindow(app_id)
+        details_window.exec_()
 
-    def destroy_widg(self, window):
-        _list = window.winfo_children()
+    def delete_selected_appointment(self):
+        selected_items = self.table.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, "Warning", "Please select an appointment to delete.")
+            return
+        row = selected_items[0].row()
+        app_id = self.appointments[row][0]
 
-        for item in _list:
-            if item.winfo_children():
-                _list.extend(item.winfo_children())
-        for item in _list:
-            item.destroy()
+        reply = QMessageBox.question(
+            self,
+            "Confirm Deletion",
+            "Are you sure you want to delete this appointment?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if reply == QMessageBox.Yes:
+            conn = sqlite3.connect(DB_FILE)
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM appointments WHERE id=?", (app_id,))
+            conn.commit()
+            conn.close()
+            QMessageBox.information(self, "Deleted", "Appointment deleted successfully.")
+            self.show_database_view()
 
-    def show_loading_screen(self):
-        self.grey_out_window()
-        loading_screen = Toplevel(self.root)
-        loading_screen.geometry("200x100")
-        loading_screen.transient(self.root)
-        loading_screen.grab_set()
-        loading_screen.title("Loading...")
+    def edit_selected_appointment(self):
+        selected_items = self.table.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, "Warning", "Please select an appointment to edit.")
+            return
+        row = selected_items[0].row()
+        app_id = self.appointments[row][0]
+        self.show_appointment_view(edit_id=app_id)
 
-        loading_label = Label(loading_screen, text="Loading, please wait...")
-        loading_label.pack(pady=20)
+    def attach_files(self):
+        files, _ = QFileDialog.getOpenFileNames(self, "Select Files or Photos")
+        if files:
+            self.attached_files.extend(files)
+            self.show_attached_files()
 
-        self.root.after(2000, lambda: loading_screen.destroy())
-
-    def grey_out_window(self):
-        overlay = Toplevel(self.root)
-        overlay.attributes('-alpha', 0.5)
-        overlay.geometry(self.root.geometry())
-        overlay.transient(self.root)
-        overlay.grab_set()
-        self.root.after(2000, lambda: overlay.destroy())
+    def save_appointment(self):
+        data = {
+            "Name": self.name_entry.text(),
+            "Surname": self.surname_entry.text(),
+            "Date": self.date_entry.date().toString("yyyy-MM-dd"),
+            "Time": self.time_entry.time().toString("HH:mm"),
+            "Phone": self.phone_entry.text(),
+            "Details": self.details_entry.toPlainText(),
+            "Status": self.status_entry.currentText(),
+            "Attachments": self.attached_files
+        }
+        save_to_db(data, update_id=self.current_edit_id)
+        self.current_edit_id = None
+        self.attached_files = []
+        self.show_home_view()
