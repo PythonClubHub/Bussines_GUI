@@ -215,6 +215,7 @@ class HomeDent(QWidget):
         back_button.clicked.connect(self.show_home_view)
         self.layout.addWidget(back_button)
 
+        # Cargar datos si edit
         if edit_id:
             row = fetch_appointment_by_id(edit_id)
             if row:
@@ -223,10 +224,10 @@ class HomeDent(QWidget):
                 self.date_entry.setDate(QDate.fromString(row[3], "yyyy-MM-dd"))
                 self.time_entry.setTime(QTime.fromString(row[4], "HH:mm"))
                 self.phone_entry.setText(row[5])
-                self.details_entry.setText(row[6])
-                self.status_entry.setCurrentText(row[7])
+                self.details_entry.setText(row[6])   # detalles correctos
+                self.status_entry.setCurrentText(row[7])  # status correcto
                 if row[8]:
-                    self.attached_files = row[8].split(",")
+                    self.attached_files = row[8].split(",")  # attachments correctos
                 self.show_attached_files()
 
     def show_attached_files(self):
@@ -239,10 +240,14 @@ class HomeDent(QWidget):
         for f in self.attached_files:
             h_layout = QHBoxLayout()
             lbl = QLabel(os.path.basename(f))
+            btn = QPushButton("Open")
+            btn.setMaximumWidth(60)
+            btn.clicked.connect(lambda _, path=f: open_file(path))
             remove_btn = QPushButton("Remove")
             remove_btn.setMaximumWidth(60)
             remove_btn.clicked.connect(lambda _, path=f: self.remove_attachment(path))
             h_layout.addWidget(lbl)
+            h_layout.addWidget(btn)
             h_layout.addWidget(remove_btn)
             self.attach_layout.addLayout(h_layout)
 
