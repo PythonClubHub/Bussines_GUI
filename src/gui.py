@@ -7,10 +7,11 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QPushButton,
     QLineEdit, QFormLayout, QTextEdit, QFileDialog,
     QDateEdit, QTimeEdit, QComboBox, QTableWidget, QTableWidgetItem,
-    QDialog, QMessageBox, QHBoxLayout
+    QDialog, QMessageBox, QHBoxLayout, QGroupBox
 )
-from PyQt5.QtCore import QDate, QTime
-from PyQt5.QtGui import QColor, QBrush
+from PyQt5.QtCore import QDate, QTime, Qt
+from PyQt5.QtGui import QColor, QBrush, QFont
+
 
 DB_FILE = "dental_appointments.db"
 
@@ -94,7 +95,7 @@ class PatientDetailsWindow(QDialog):
     def __init__(self, appointment_id):
         super().__init__()
         self.setWindowTitle("Patient Details")
-        self.setGeometry(200, 200, 400, 500)
+        self.setGeometry(200, 200, 450, 550)
         layout = QFormLayout()
         self.setLayout(layout)
 
@@ -109,10 +110,10 @@ class PatientDetailsWindow(QDialog):
         for idx, label_text in enumerate(labels):
             value = row[idx]
             if label_text == "Attachments" and value:
-                files = value.split(",")
+                files = [f.strip() for f in value.split(",")]
                 for f in files:
                     if f:
-                        btn = QPushButton(os.path.basename(f))
+                        btn = QPushButton(f"📎 {os.path.basename(f)}")
                         btn.clicked.connect(lambda _, path=f: open_file(path))
                         layout.addRow("Attachment:", btn)
                 continue
@@ -125,6 +126,9 @@ class PatientDetailsWindow(QDialog):
             layout.addRow(f"{label_text}:", display)
 
         close_button = QPushButton("Close")
+        close_button.setStyleSheet("""
+            background-color: #C0392B; color: white; padding: 10px; border-radius: 8px;
+        """)
         close_button.clicked.connect(self.close)
         layout.addRow(close_button)
 
@@ -133,8 +137,8 @@ class PatientDetailsWindow(QDialog):
 class HomeDent(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("HomeDent")
-        self.setGeometry(100, 100, 750, 500)
+        self.setWindowTitle("StomaDent")
+        self.setGeometry(100, 100, 800, 600)
         create_database()
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
@@ -155,24 +159,50 @@ class HomeDent(QWidget):
     # ---------------- Home View ----------------
     def show_home_view(self):
         self.clear_layout()
-        clinic_label = QLabel("HOMEDENT")
-        clinic_label.setStyleSheet("font-size: 20px; font-weight: bold;")
+        
+        clinic_label = QLabel("STOMADENT")
+        clinic_label.setStyleSheet("""
+            font-size: 36px; font-weight: bold; color: #2E86C1;
+        """)
+        clinic_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(clinic_label)
 
-        appointment_button = QPushButton("Appointment")
-        appointment_button.clicked.connect(self.show_appointment_view)
-        self.layout.addWidget(appointment_button)
+        btn_layout = QHBoxLayout()
+        self.layout.addLayout(btn_layout)
 
-        db_button = QPushButton("Database")
+        appointment_button = QPushButton("🗓 Appointment")
+        appointment_button.setStyleSheet("""
+            font-size: 18px; padding: 15px; background-color: #3498DB;
+            color: white; border-radius: 10px;
+        """)
+        appointment_button.clicked.connect(self.show_appointment_view)
+        btn_layout.addWidget(appointment_button)
+
+        db_button = QPushButton("📋 Database")
+        db_button.setStyleSheet("""
+            font-size: 18px; padding: 15px; background-color: #1ABC9C;
+            color: white; border-radius: 10px;
+        """)
         db_button.clicked.connect(self.show_database_view)
-        self.layout.addWidget(db_button)
+        btn_layout.addWidget(db_button)
 
     # ---------------- Appointment View ----------------
     def show_appointment_view(self, edit_id=None):
         self.clear_layout()
         self.current_edit_id = edit_id
         self.attached_files = []
+
+        form_group = QGroupBox("Appointment Details")
+        form_group.setStyleSheet("""
+            QGroupBox {
+                font-size: 20px; font-weight: bold; color: #2E86C1;
+                border: 2px solid #2E86C1; border-radius: 10px; margin-top: 10px;
+            }
+            QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top center; padding: 0 3px; }
+        """)
         form_layout = QFormLayout()
+        form_group.setLayout(form_layout)
+        self.layout.addWidget(form_group)
 
         self.name_entry = QLineEdit()
         form_layout.addRow("Name:", self.name_entry)
@@ -193,29 +223,34 @@ class HomeDent(QWidget):
         form_layout.addRow("Phone Number:", self.phone_entry)
 
         self.details_entry = QTextEdit()
-        form_layout.addRow("Appointment Details:", self.details_entry)
+        self.details_entry.setFixedHeight(100)
+        form_layout.addRow("Details:", self.details_entry)
 
         self.status_entry = QComboBox()
         self.status_entry.addItems(["Scheduled", "Completed", "Cancelled"])
         form_layout.addRow("Status:", self.status_entry)
 
         self.attach_layout = QVBoxLayout()
-        self.attach_button = QPushButton("Attach Files / Photos")
+        self.attach_button = QPushButton("📎 Attach Files / Photos")
+        self.attach_button.setStyleSheet("background-color: #F39C12; color: white; border-radius: 8px; padding: 5px;")
         self.attach_button.clicked.connect(self.attach_files)
         self.attach_layout.addWidget(self.attach_button)
         form_layout.addRow("Attachments:", self.attach_layout)
 
-        self.layout.addLayout(form_layout)
-
-        save_button = QPushButton("Save Appointment")
+        btn_layout = QHBoxLayout()
+        save_button = QPushButton("💾 Save Appointment")
+        save_button.setStyleSheet("background-color: #27AE60; color: white; padding: 10px; font-size: 16px; border-radius: 8px;")
         save_button.clicked.connect(self.save_appointment)
-        self.layout.addWidget(save_button)
+        btn_layout.addWidget(save_button)
 
-        back_button = QPushButton("Back to Home")
+        back_button = QPushButton("⬅ Back to Home")
+        back_button.setStyleSheet("background-color: #C0392B; color: white; padding: 10px; font-size: 16px; border-radius: 8px;")
         back_button.clicked.connect(self.show_home_view)
-        self.layout.addWidget(back_button)
+        btn_layout.addWidget(back_button)
 
-        # Cargar datos si edit
+        self.layout.addLayout(btn_layout)
+
+        # Load existing data if editing
         if edit_id:
             row = fetch_appointment_by_id(edit_id)
             if row:
@@ -224,10 +259,10 @@ class HomeDent(QWidget):
                 self.date_entry.setDate(QDate.fromString(row[3], "yyyy-MM-dd"))
                 self.time_entry.setTime(QTime.fromString(row[4], "HH:mm"))
                 self.phone_entry.setText(row[5])
-                self.details_entry.setText(row[6])   # detalles correctos
-                self.status_entry.setCurrentText(row[7])  # status correcto
+                self.details_entry.setText(row[6])
+                self.status_entry.setCurrentText(row[7])
                 if row[8]:
-                    self.attached_files = row[8].split(",")  # attachments correctos
+                    self.attached_files = [f.strip() for f in row[8].split(",")]
                 self.show_attached_files()
 
     def show_attached_files(self):
@@ -258,10 +293,11 @@ class HomeDent(QWidget):
 
     # ---------------- Database View ----------------
     def show_database_view(self):
+        from PyQt5.QtCore import Qt
         self.clear_layout()
         all_appointments = fetch_all_appointments()
 
-        # Orden descendente: más lejana al futuro primero
+        # Sort: future to past
         self.appointments = sorted(
             all_appointments,
             key=lambda r: datetime.strptime(f"{r[3]} {r[4]}", "%Y-%m-%d %H:%M"),
@@ -269,7 +305,7 @@ class HomeDent(QWidget):
         )
 
         self.table = QTableWidget()
-        self.table.setColumnCount(5)  # nueva columna Has Attachment
+        self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(["Patient Name", "Date", "Time", "Cause", "Attachment?"])
         self.table.setRowCount(len(self.appointments))
 
@@ -297,6 +333,11 @@ class HomeDent(QWidget):
                     min_delta = delta
                     focus_index = row_idx
 
+        self.table.setAlternatingRowColors(True)
+        self.table.setStyleSheet("""
+            QTableWidget { font-size: 14px; gridline-color: #BDC3C7; }
+            QHeaderView::section { font-weight: bold; background-color: #3498DB; color: white; }
+        """)
         self.table.resizeColumnsToContents()
         self.layout.addWidget(self.table)
 
@@ -306,15 +347,18 @@ class HomeDent(QWidget):
 
         self.table.cellDoubleClicked.connect(self.open_patient_details)
 
-        delete_button = QPushButton("Delete Appointment")
+        delete_button = QPushButton("🗑 Delete Appointment")
+        delete_button.setStyleSheet("background-color: #C0392B; color: white; padding: 10px; border-radius: 8px;")
         delete_button.clicked.connect(self.delete_selected_appointment)
         self.layout.addWidget(delete_button)
 
-        edit_button = QPushButton("Edit Appointment")
+        edit_button = QPushButton("✏ Edit Appointment")
+        edit_button.setStyleSheet("background-color: #F1C40F; color: white; padding: 10px; border-radius: 8px;")
         edit_button.clicked.connect(self.edit_selected_appointment)
         self.layout.addWidget(edit_button)
 
-        back_button = QPushButton("Back to Home")
+        back_button = QPushButton("⬅ Back to Home")
+        back_button.setStyleSheet("background-color: #C0392B; color: white; padding: 10px; border-radius: 8px;")
         back_button.clicked.connect(self.show_home_view)
         self.layout.addWidget(back_button)
 

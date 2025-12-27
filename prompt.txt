@@ -1,0 +1,43 @@
+I am developing a desktop application for a dental office called HomeDent. The purpose is to manage appointments, patient information, and attachments (documents or photos).
+Requirements and context:
+Environment: Python 3.13, PyQt5, SQLite, macOS (later we may want Windows).
+Structure:
+main.py: entry point that runs the application.
+gui.py: contains the main class HomeDent with GUI logic.
+Home Window:
+Shows clinic name HOMEDENT as a label.
+Buttons:
+“Appointment” → goes to appointment view.
+“Database” → goes to database view.
+Appointment Window:
+Fields: Name, Surname, Date (calendar), Time, Phone Number, Appointment Details (multi-line), Status (Scheduled/Completed/Cancelled).
+Attachments: ability to attach multiple files/photos.
+Save button stores data in SQLite database.
+Back to Home button returns to home view.
+If editing, loads existing data correctly with attachments.
+Database Window:
+Table with columns: Patient Name, Date, Time, Cause (details), Attachment? (Yes/No).
+Orders appointments by future-to-past: the farthest future appointments first, oldest last.
+Past appointments or completed ones are greyed out.
+The focus/highlight is always on the next upcoming appointment (nearest in future relative to current time).
+Double-clicking a row opens PatientDetailsWindow with all info and buttons to open attached files.
+Buttons to Edit or Delete the selected appointment.
+Attachments Handling:
+Can attach multiple files.
+Can remove attachments when editing.
+Attachments persist in the database as a comma-separated string.
+Column “Attachment?” indicates Yes if any attachment exists.
+Attachments can be opened with system default application.
+Database:
+SQLite table appointments with columns:
+id | name | surname | date | time | phone | details | status | attachments
+All fields stored correctly; details/status/attachments indices correctly handled.
+Behavior:
+Adding/editing appointments updates database and GUI correctly.
+Past appointments are greyed out; next appointment is highlighted.
+Attachments are handled robustly: open, add, remove.
+Focus logic and sorting now work as intended.
+Goal:
+The app is single-window GUI: no multiple windows except for viewing details of a patient.
+Ready for PyInstaller packaging into .app for macOS.
+Provide the full functional code for gui.py with all these requirements, including Home View, Appointment View, Database View, editing, deleting, attaching files, proper focus logic, greyed past appointments, and correct handling of details, status, and attachments.
