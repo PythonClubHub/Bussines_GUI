@@ -136,8 +136,17 @@ class PatientDetailsWindow(QDialog):
 class HomeDent(QWidget):
     def __init__(self):
         super().__init__()
+
+        # ---------------- Icon setup ----------------
+        import platform
+        from PyQt5.QtGui import QIcon
+        icon_path = "stomadent_icon.ico" if platform.system() == "Windows" else "stomadent_icon.icns"
+        self.setWindowIcon(QIcon(icon_path))
+
+        # ---------------- Window setup ----------------
         self.setWindowTitle("StomaDent")
         self.setGeometry(100, 100, 800, 600)
+
         create_database()
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
