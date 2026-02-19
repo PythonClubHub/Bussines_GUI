@@ -1,0 +1,7 @@
+
+Filtrare lista databease.
+Rezumat detalii nr telefon.
+Fisa pacienti nu toate intrarile. Nu 17k ci 1k fise pacienti.
+    + Pacient, Nume, Adresa, Numar, Radiografie
+        + Data 2026
+        + Data 2025
