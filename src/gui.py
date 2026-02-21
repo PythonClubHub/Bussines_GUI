@@ -211,7 +211,7 @@ class HomeDent(QWidget):
         # Butoane jos, lipite
         btn_container = QVBoxLayout()
 
-        btn = QPushButton("📁 Pacienți")
+        btn = QPushButton("Pacienți")
         btn.setStyleSheet("padding:15px; font-size:18px; background:#3498DB; color:white; border-radius:10px;")
         btn.clicked.connect(self.show_patients_view)
         btn_container.addWidget(btn)
@@ -258,7 +258,7 @@ class HomeDent(QWidget):
         self.filter_edit.setPlaceholderText("Caută după nume, prenume, telefon sau dată (YYYY-MM-DD)...")
         self.filter_edit.clear()
         self.filter_edit.textChanged.connect(self.apply_patient_filter)
-        filter_layout.addWidget(QLabel("🔍 Caută:"))
+        filter_layout.addWidget(QLabel("Caută:"))
         filter_layout.addWidget(self.filter_edit)
         self.layout.addLayout(filter_layout)
 
@@ -276,7 +276,7 @@ class HomeDent(QWidget):
         add_btn.clicked.connect(self.add_patient)
         btn_layout.addWidget(add_btn)
 
-        delete_btn = QPushButton("🗑 Șterge pacient")
+        delete_btn = QPushButton("Șterge pacient")
         delete_btn.setStyleSheet("background:#C0392B; color:white; padding:10px; border-radius:8px;")
         delete_btn.clicked.connect(self.delete_selected_patient)
         btn_layout.addWidget(delete_btn)
