@@ -13,8 +13,9 @@ from PyQt5.QtCore import QDate, QTime, Qt
 from PyQt5.QtGui import QColor, QBrush, QFont, QIcon
 
 DB_FILE = "stomadent.db"
-APP_VERSION = "1.0.2"
+APP_VERSION = "1.0.3"
 CONTACT_EMAIL = "timotei.sandru2022@gmail.com"
+
 
 # ---------------- Baza de date ----------------
 
@@ -44,6 +45,7 @@ def create_database():
     conn.commit()
     conn.close()
 
+
 def open_file(path):
     if not os.path.exists(path):
         QMessageBox.warning(None, "Fișier lipsă", f"Fișierul nu a fost găsit:\n{path}")
@@ -54,6 +56,7 @@ def open_file(path):
         os.startfile(path)
     else:
         subprocess.call(("xdg-open", path))
+
 
 # ---------------- Dialog Despre aplicație ----------------
 
@@ -84,6 +87,7 @@ class AboutDialog(QDialog):
         close_btn = QPushButton("Închide")
         close_btn.clicked.connect(self.close)
         layout.addWidget(close_btn)
+
 
 # ---------------- Dialog Adăugare Pacient ----------------
 
@@ -120,6 +124,7 @@ class AddPatientDialog(QDialog):
             self.phone_edit.text().strip()
         )
 
+
 # ---------------- Dialog Detalii Programare ----------------
 
 class AppointmentDetailsDialog(QDialog):
@@ -155,6 +160,7 @@ class AppointmentDetailsDialog(QDialog):
         close_btn.clicked.connect(self.close)
         layout.addWidget(close_btn)
 
+
 # ---------------- Interfață principală ----------------
 
 class HomeDent(QWidget):
@@ -172,6 +178,7 @@ class HomeDent(QWidget):
 
         self.layout = QVBoxLayout(self)
         self.current_patient_id = None
+        self.current_appointment_id = None
         self.attached_files = []
 
         self.show_home_view()
@@ -195,43 +202,38 @@ class HomeDent(QWidget):
     def show_home_view(self):
         self.clear_layout()
 
-        # Spacer sus
         self.layout.addStretch(2)
 
-        # Logo STOMADENT centrat vertical
         clinic_label = QLabel("STOMADENT")
-        clinic_label.setFont(QFont("Pacifico", 36, QFont.Bold))
+        clinic_label.setFont(QFont("Arial", 36, QFont.Bold))
         clinic_label.setStyleSheet("color: #2E86C1;")
         clinic_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(clinic_label, alignment=Qt.AlignCenter)
 
-        # Spacer sub logo
         self.layout.addStretch(3)
 
-        # Butoane jos, lipite
         btn_container = QVBoxLayout()
 
-        btn = QPushButton("Pacienți")
+        btn = QPushButton(" Pacienți")
+        btn.setIcon(self.style().standardIcon(QStyle.SP_DirIcon))
         btn.setStyleSheet("padding:15px; font-size:18px; background:#3498DB; color:white; border-radius:10px;")
         btn.clicked.connect(self.show_patients_view)
         btn_container.addWidget(btn)
 
-        add_btn = QPushButton("➕ Adaugă pacient nou")
+        add_btn = QPushButton(" Adaugă pacient nou")
+        add_btn.setIcon(self.style().standardIcon(QStyle.SP_FileDialogNewFolder))
         add_btn.setStyleSheet("padding:15px; font-size:18px; background:#1ABC9C; color:white; border-radius:10px;")
         add_btn.clicked.connect(self.add_patient)
         btn_container.addWidget(add_btn)
 
-        # Centrare orizontală a butoanelor jos
         btn_wrapper = QHBoxLayout()
         btn_wrapper.addStretch()
         btn_wrapper.addLayout(btn_container)
         btn_wrapper.addStretch()
         self.layout.addLayout(btn_wrapper)
 
-        # Mic spațiu până jos
         self.layout.addSpacing(10)
 
-        # Info jos dreapta
         info_btn = QPushButton(" Informații")
         info_btn.setIcon(self.style().standardIcon(QStyle.SP_MessageBoxInformation))
         info_btn.setStyleSheet("""
@@ -244,11 +246,7 @@ class HomeDent(QWidget):
         info_btn.clicked.connect(self.show_about_dialog)
         self.layout.addWidget(info_btn, alignment=Qt.AlignRight)
 
-
-    
-
-
-    # ---------------- Clasificator pacienți ----------------
+    # ---------------- Pacienți ----------------
 
     def show_patients_view(self):
         self.clear_layout()
@@ -256,9 +254,11 @@ class HomeDent(QWidget):
         filter_layout = QHBoxLayout()
         self.filter_edit = QLineEdit()
         self.filter_edit.setPlaceholderText("Caută după nume, prenume, telefon sau dată (YYYY-MM-DD)...")
-        self.filter_edit.clear()
         self.filter_edit.textChanged.connect(self.apply_patient_filter)
-        filter_layout.addWidget(QLabel("Caută:"))
+
+        search_icon = QLabel()
+        search_icon.setPixmap(self.style().standardIcon(QStyle.SP_FileDialogContentsView).pixmap(16, 16))
+        filter_layout.addWidget(search_icon)
         filter_layout.addWidget(self.filter_edit)
         self.layout.addLayout(filter_layout)
 
@@ -272,17 +272,20 @@ class HomeDent(QWidget):
         self.table.cellDoubleClicked.connect(self.open_patient_file)
 
         btn_layout = QHBoxLayout()
-        add_btn = QPushButton("➕ Adaugă pacient")
+        add_btn = QPushButton(" Adaugă pacient")
+        add_btn.setIcon(self.style().standardIcon(QStyle.SP_FileDialogNewFolder))
         add_btn.clicked.connect(self.add_patient)
         btn_layout.addWidget(add_btn)
 
-        delete_btn = QPushButton("Șterge pacient")
+        delete_btn = QPushButton(" Șterge pacient")
+        delete_btn.setIcon(self.style().standardIcon(QStyle.SP_TrashIcon))
         delete_btn.setStyleSheet("background:#C0392B; color:white; padding:10px; border-radius:8px;")
         delete_btn.clicked.connect(self.delete_selected_patient)
         btn_layout.addWidget(delete_btn)
         self.layout.addLayout(btn_layout)
 
-        back_btn = QPushButton("⬅ Înapoi la meniu")
+        back_btn = QPushButton(" Înapoi la meniu")
+        back_btn.setIcon(self.style().standardIcon(QStyle.SP_ArrowBack))
         back_btn.setStyleSheet("background:#E67E22; color:white; padding:10px; border-radius:8px;")
         back_btn.clicked.connect(self.show_home_view)
         self.layout.addWidget(back_btn)
@@ -329,32 +332,28 @@ class HomeDent(QWidget):
         if dialog.exec_() == QDialog.Accepted:
             name, surname, phone = dialog.get_data()
             if not name or not surname:
-                QMessageBox.warning(self, "Eroare validare", "Numele și prenumele sunt obligatorii.")
+                QMessageBox.warning(self, "Eroare", "Numele și prenumele sunt obligatorii.")
                 return
 
             conn = sqlite3.connect(DB_FILE)
-            conn.execute(
-                "INSERT INTO patients (name, surname, phone) VALUES (?, ?, ?)",
-                (name, surname, phone)
-            )
+            conn.execute("INSERT INTO patients (name, surname, phone) VALUES (?, ?, ?)", (name, surname, phone))
             conn.commit()
             conn.close()
 
             self.show_patients_view()
 
     def delete_selected_patient(self):
-        selected_items = self.table.selectedItems()
-        if not selected_items:
-            QMessageBox.warning(self, "Ștergere pacient", "Selectează un pacient pentru ștergere.")
+        selected = self.table.selectedItems()
+        if not selected:
+            QMessageBox.warning(self, "Ștergere", "Selectează un pacient.")
             return
 
-        row = selected_items[0].row()
+        row = selected[0].row()
         patient_id = self.patients[row][0]
 
         reply = QMessageBox.question(
-            self,
-            "Confirmare ștergere",
-            "Ești sigur că vrei să ștergi acest pacient?\nToate programările acestuia vor fi șterse.\nAceastă acțiune nu poate fi anulată.",
+            self, "Confirmare",
+            "Sigur vrei să ștergi pacientul și toate programările lui?",
             QMessageBox.Yes | QMessageBox.No
         )
 
@@ -365,6 +364,25 @@ class HomeDent(QWidget):
             conn.commit()
             conn.close()
             self.show_patients_view()
+
+    def confirm_back_from_appointment(self):
+        has_data = (
+            self.details_entry.toPlainText().strip() != "" or
+            self.attached_files
+        )
+
+        if has_data:
+            reply = QMessageBox.question(
+                self,
+                "Confirmare",
+                "Dacă te întorci, modificările nesalvate se vor pierde.\n"
+                "Sigur vrei să mergi înapoi?",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if reply == QMessageBox.No:
+                return
+
+        self.show_patient_appointments_view()
 
     # ---------------- Dosar pacient ----------------
 
@@ -392,51 +410,42 @@ class HomeDent(QWidget):
         self.table = QTableWidget()
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(["Data", "Ora", "Detalii", "Status", "Atașamente?"])
-        self.table.setRowCount(len(appointments))
         self.layout.addWidget(self.table)
 
-        self.appointments = appointments
+        self.table.cellDoubleClicked.connect(self.open_appointment_details)
 
-        now = datetime.now()
-        focus_index = None
-        min_delta = None
+        self.appointments = appointments
+        self.table.setRowCount(len(appointments))
 
         for r, (aid, d, t, details, status, attachments) in enumerate(appointments):
-            dt = datetime.strptime(f"{d} {t}", "%Y-%m-%d %H:%M")
             self.table.setItem(r, 0, QTableWidgetItem(d))
             self.table.setItem(r, 1, QTableWidgetItem(t))
             self.table.setItem(r, 2, QTableWidgetItem(details))
             self.table.setItem(r, 3, QTableWidgetItem(status))
             self.table.setItem(r, 4, QTableWidgetItem("Da" if attachments else "Nu"))
 
-            if dt < now or status == "Finalizată":
-                for c in range(5):
-                    self.table.item(r, c).setForeground(QBrush(QColor("gray")))
-            else:
-                delta = (dt - now).total_seconds()
-                if min_delta is None or delta < min_delta:
-                    min_delta = delta
-                    focus_index = r
-
-        if focus_index is not None:
-            pastel_green = QColor(198, 239, 206)
-            for c in range(5):
-                self.table.item(focus_index, c).setBackground(QBrush(pastel_green))
-
-        self.table.cellDoubleClicked.connect(self.open_appointment_details)
-
         btn_layout = QHBoxLayout()
-        add_btn = QPushButton("➕ Adaugă programare")
+
+        add_btn = QPushButton(" Adaugă programare")
+        add_btn.setIcon(self.style().standardIcon(QStyle.SP_FileDialogNewFolder))
         add_btn.clicked.connect(self.show_add_appointment_view)
         btn_layout.addWidget(add_btn)
 
-        delete_btn = QPushButton("🗑 Șterge programare")
+        edit_btn = QPushButton(" Editează programare")
+        edit_btn.setIcon(self.style().standardIcon(QStyle.SP_FileDialogDetailedView))
+        edit_btn.clicked.connect(self.edit_selected_appointment)
+        btn_layout.addWidget(edit_btn)
+
+        delete_btn = QPushButton(" Șterge programare")
+        delete_btn.setIcon(self.style().standardIcon(QStyle.SP_TrashIcon))
         delete_btn.setStyleSheet("background:#C0392B; color:white; padding:10px; border-radius:8px;")
         delete_btn.clicked.connect(self.delete_selected_appointment)
         btn_layout.addWidget(delete_btn)
+
         self.layout.addLayout(btn_layout)
 
-        back_btn = QPushButton("⬅ Înapoi la pacienți")
+        back_btn = QPushButton(" Înapoi la pacienți")
+        back_btn.setIcon(self.style().standardIcon(QStyle.SP_ArrowBack))
         back_btn.setStyleSheet("background:#E67E22; color:white; padding:10px; border-radius:8px;")
         back_btn.clicked.connect(self.show_patients_view)
         self.layout.addWidget(back_btn)
@@ -446,19 +455,28 @@ class HomeDent(QWidget):
         dialog = AppointmentDetailsDialog(appointment[1:])
         dialog.exec_()
 
-    def delete_selected_appointment(self):
-        selected_items = self.table.selectedItems()
-        if not selected_items:
-            QMessageBox.warning(self, "Ștergere programare", "Selectează o programare pentru ștergere.")
+    def edit_selected_appointment(self):
+        selected = self.table.selectedItems()
+        if not selected:
+            QMessageBox.warning(self, "Editare", "Selectează o programare.")
             return
 
-        row = selected_items[0].row()
+        row = selected[0].row()
+        self.current_appointment_id = self.appointments[row][0]
+        self.show_add_appointment_view(edit_id=self.current_appointment_id)
+
+    def delete_selected_appointment(self):
+        selected = self.table.selectedItems()
+        if not selected:
+            QMessageBox.warning(self, "Ștergere", "Selectează o programare.")
+            return
+
+        row = selected[0].row()
         appointment_id = self.appointments[row][0]
 
         reply = QMessageBox.question(
-            self,
-            "Confirmare ștergere",
-            "Ești sigur că vrei să ștergi această programare?\nAceastă acțiune nu poate fi anulată.",
+            self, "Confirmare",
+            "Sigur vrei să ștergi această programare?",
             QMessageBox.Yes | QMessageBox.No
         )
 
@@ -469,11 +487,12 @@ class HomeDent(QWidget):
             conn.close()
             self.show_patient_appointments_view()
 
-    # ---------------- Adăugare programare ----------------
+    # ---------------- Adăugare / Editare programare ----------------
 
-    def show_add_appointment_view(self):
+    def show_add_appointment_view(self, edit_id=None):
         self.clear_layout()
         self.attached_files = []
+        self.current_appointment_id = edit_id
 
         form = QFormLayout()
 
@@ -493,19 +512,38 @@ class HomeDent(QWidget):
         self.status_entry.addItems(["Programată", "Finalizată", "Anulată"])
         form.addRow("Status:", self.status_entry)
 
-        attach_btn = QPushButton("📎 Atașează fișiere")
+        attach_btn = QPushButton(" Atașează fișiere")
+        attach_btn.setIcon(self.style().standardIcon(QStyle.SP_DirOpenIcon))
         attach_btn.clicked.connect(self.attach_files)
         form.addRow("Atașamente:", attach_btn)
 
         self.layout.addLayout(form)
 
-        save_btn = QPushButton("💾 Salvează")
+        if edit_id:
+            conn = sqlite3.connect(DB_FILE)
+            row = conn.execute("""
+                SELECT date, time, details, status, attachments
+                FROM appointments WHERE id=?
+            """, (edit_id,)).fetchone()
+            conn.close()
+
+            if row:
+                self.date_entry.setDate(QDate.fromString(row[0], "yyyy-MM-dd"))
+                self.time_entry.setTime(QTime.fromString(row[1], "HH:mm"))
+                self.details_entry.setPlainText(row[2])
+                self.status_entry.setCurrentText(row[3])
+                if row[4]:
+                    self.attached_files = row[4].split(",")
+
+        save_btn = QPushButton(" Salvează")
+        save_btn.setIcon(self.style().standardIcon(QStyle.SP_DialogSaveButton))
         save_btn.clicked.connect(self.save_appointment)
         self.layout.addWidget(save_btn)
 
-        back_btn = QPushButton("⬅ Înapoi")
+        back_btn = QPushButton(" Înapoi")
+        back_btn.setIcon(self.style().standardIcon(QStyle.SP_ArrowBack))
         back_btn.setStyleSheet("background:#E67E22; color:white; padding:10px; border-radius:8px;")
-        back_btn.clicked.connect(self.show_patient_appointments_view)
+        back_btn.clicked.connect(self.confirm_back_from_appointment)
         self.layout.addWidget(back_btn)
 
     def attach_files(self):
@@ -515,18 +553,34 @@ class HomeDent(QWidget):
 
     def save_appointment(self):
         conn = sqlite3.connect(DB_FILE)
-        conn.execute("""
-            INSERT INTO appointments (patient_id, date, time, details, status, attachments)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (
-            self.current_patient_id,
-            self.date_entry.date().toString("yyyy-MM-dd"),
-            self.time_entry.time().toString("HH:mm"),
-            self.details_entry.toPlainText(),
-            self.status_entry.currentText(),
-            ",".join(self.attached_files)
-        ))
+
+        if self.current_appointment_id:
+            conn.execute("""
+                UPDATE appointments
+                SET date=?, time=?, details=?, status=?, attachments=?
+                WHERE id=?
+            """, (
+                self.date_entry.date().toString("yyyy-MM-dd"),
+                self.time_entry.time().toString("HH:mm"),
+                self.details_entry.toPlainText(),
+                self.status_entry.currentText(),
+                ",".join(self.attached_files),
+                self.current_appointment_id
+            ))
+            self.current_appointment_id = None
+        else:
+            conn.execute("""
+                INSERT INTO appointments (patient_id, date, time, details, status, attachments)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                self.current_patient_id,
+                self.date_entry.date().toString("yyyy-MM-dd"),
+                self.time_entry.time().toString("HH:mm"),
+                self.details_entry.toPlainText(),
+                self.status_entry.currentText(),
+                ",".join(self.attached_files)
+            ))
+
         conn.commit()
         conn.close()
-
         self.show_patient_appointments_view()
