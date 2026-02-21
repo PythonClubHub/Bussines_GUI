@@ -302,7 +302,7 @@ class HomeDent(QWidget):
                 p.phone LIKE ? OR
                 a.date LIKE ?
             GROUP BY p.id
-            ORDER BY p.surname, p.name
+            ORDER BY p.name COLLATE NOCASE, p.surname COLLATE NOCASE
         """, (
             datetime.now().strftime("%Y-%m-%d %H:%M"),
             f"%{filter_text}%",
