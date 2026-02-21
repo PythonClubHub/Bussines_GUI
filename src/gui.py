@@ -13,7 +13,7 @@ from PyQt5.QtCore import QDate, QTime, Qt
 from PyQt5.QtGui import QColor, QBrush, QFont, QIcon
 
 DB_FILE = "stomadent.db"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.1"
 CONTACT_EMAIL = "timotei.sandru2022@gmail.com"
 
 # ---------------- Baza de date ----------------
