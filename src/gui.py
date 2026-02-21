@@ -13,7 +13,7 @@ from PyQt5.QtCore import QDate, QTime, Qt
 from PyQt5.QtGui import QColor, QBrush, QFont, QIcon
 
 DB_FILE = "stomadent.db"
-APP_VERSION = "1.0.3"
+APP_VERSION = "1.1.3"
 CONTACT_EMAIL = "timotei.sandru2022@gmail.com"
 
 
@@ -174,6 +174,9 @@ class HomeDent(QWidget):
         self.setWindowTitle("StomaDent")
         self.setGeometry(100, 100, 900, 600)
 
+        # 🔴 Home fără close/min/max
+        self.setWindowFlags(Qt.FramelessWindowHint)
+
         create_database()
 
         self.layout = QVBoxLayout(self)
@@ -234,6 +237,9 @@ class HomeDent(QWidget):
 
         self.layout.addSpacing(10)
 
+        bottom_bar = QHBoxLayout()
+        bottom_bar.addStretch()
+
         info_btn = QPushButton(" Informații")
         info_btn.setIcon(self.style().standardIcon(QStyle.SP_MessageBoxInformation))
         info_btn.setStyleSheet("""
@@ -244,7 +250,21 @@ class HomeDent(QWidget):
             text-decoration: underline;
         """)
         info_btn.clicked.connect(self.show_about_dialog)
-        self.layout.addWidget(info_btn, alignment=Qt.AlignRight)
+        bottom_bar.addWidget(info_btn)
+
+        exit_btn = QPushButton(" Închide aplicația")
+        exit_btn.setIcon(self.style().standardIcon(QStyle.SP_DialogCloseButton))
+        exit_btn.setStyleSheet("""
+            background: transparent;
+            color: #C0392B;
+            font-size: 12px;
+            border: none;
+            text-decoration: underline;
+        """)
+        exit_btn.clicked.connect(self.close)
+        bottom_bar.addWidget(exit_btn)
+
+        self.layout.addLayout(bottom_bar)
 
     # ---------------- Pacienți ----------------
 
@@ -364,25 +384,6 @@ class HomeDent(QWidget):
             conn.commit()
             conn.close()
             self.show_patients_view()
-
-    def confirm_back_from_appointment(self):
-        has_data = (
-            self.details_entry.toPlainText().strip() != "" or
-            self.attached_files
-        )
-
-        if has_data:
-            reply = QMessageBox.question(
-                self,
-                "Confirmare",
-                "Dacă te întorci, modificările nesalvate se vor pierde.\n"
-                "Sigur vrei să mergi înapoi?",
-                QMessageBox.Yes | QMessageBox.No
-            )
-            if reply == QMessageBox.No:
-                return
-
-        self.show_patient_appointments_view()
 
     # ---------------- Dosar pacient ----------------
 
@@ -583,4 +584,23 @@ class HomeDent(QWidget):
 
         conn.commit()
         conn.close()
+        self.show_patient_appointments_view()
+
+    def confirm_back_from_appointment(self):
+        has_data = (
+            self.details_entry.toPlainText().strip() != "" or
+            bool(self.attached_files)
+        )
+
+        if has_data:
+            reply = QMessageBox.question(
+                self,
+                "Confirmare",
+                "Dacă te întorci, modificările nesalvate se vor pierde.\n"
+                "Sigur vrei să mergi înapoi?",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if reply == QMessageBox.No:
+                return
+
         self.show_patient_appointments_view()
